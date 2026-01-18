@@ -1,0 +1,34 @@
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+:root {
+	--bg-primary: #1a1a2e;
+	--bg-secondary: #16213e;
+	--bg-tertiary: #0f3460;
+	--accent: #e94560;
+	--text-primary: #eee;
+	--text-secondary: #aaa;
+}
+
+html, body {
+	height: 100%;
+	width: 100%;
+	overflow: hidden;
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+	background: var(--bg-primary);
+	color: var(--text-primary);
+}
+
+button {
+	cursor: pointer;
+	border: none;
+	font-family: inherit;
+}
+
+button:focus {
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
+}
