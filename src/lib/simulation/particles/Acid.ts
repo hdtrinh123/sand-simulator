@@ -56,13 +56,22 @@ export const Acid: ParticleDefinition = {
 		}
 
 		// Spread horizontally
-		const spreadDir = Math.random() < 0.5 ? -1 : 1;
-		if (grid.isEmpty(x + spreadDir, y)) {
-			grid.swap(x, y, x + spreadDir, y);
-			return;
-		}
-		if (grid.isEmpty(x - spreadDir, y)) {
-			grid.swap(x, y, x - spreadDir, y);
-		}
+		const spreadDir = Math.random() < 0.5 ? 1 : -1;
+		if (trySpread(grid, x, y, spreadDir)) return;
+		trySpread(grid, x, y, -spreadDir);
 	}
 };
+
+function trySpread(grid: Grid, x: number, y: number, dir: number): boolean {
+	const nx = x + dir;
+
+	if (grid.isEmpty(nx, y)) {
+		const hasSupport = !grid.isEmpty(nx, y + 1);
+		if (hasSupport || Math.random() < 0.3) {
+			grid.swap(x, y, nx, y);
+			return true;
+		}
+	}
+
+	return false;
+}

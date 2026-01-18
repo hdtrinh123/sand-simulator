@@ -19,9 +19,10 @@ export const Water: ParticleDefinition = {
 			return;
 		}
 
-		// Displace oil (water is denser)
+		// Displace lighter liquids below (oil)
 		const below = grid.get(x, y + 1);
-		if (below && below.type === 'oil') {
+		if (below && !below.updated && below.type === 'oil') {
+			below.updated = true;
 			grid.swap(x, y, x, y + 1);
 			return;
 		}
@@ -33,32 +34,45 @@ export const Water: ParticleDefinition = {
 				grid.swap(x, y, x + dx, y + 1);
 				return;
 			}
-		}
-
-		// Spread horizontally
-		const spreadDir = Math.random() < 0.5 ? -1 : 1;
-		const spreadDist = Math.floor(Math.random() * 3) + 1;
-
-		for (let i = 1; i <= spreadDist; i++) {
-			const nx = x + spreadDir * i;
-			if (!grid.isEmpty(nx, y)) {
-				// Try the other direction
-				if (i === 1) {
-					for (let j = 1; j <= spreadDist; j++) {
-						const mx = x - spreadDir * j;
-						if (grid.isEmpty(mx, y)) {
-							grid.swap(x, y, mx, y);
-							return;
-						}
-						if (!grid.isEmpty(mx, y)) break;
-					}
-				}
-				break;
-			}
-			if (i === spreadDist || !grid.isEmpty(nx + spreadDir, y)) {
-				grid.swap(x, y, nx, y);
+			// Displace lighter liquids diagonally
+			const diag = grid.get(x + dx, y + 1);
+			if (diag && !diag.updated && diag.type === 'oil') {
+				diag.updated = true;
+				grid.swap(x, y, x + dx, y + 1);
 				return;
 			}
 		}
+
+		// Spread horizontally - try both directions
+		const spreadDir = Math.random() < 0.5 ? 1 : -1;
+
+		// Try primary direction
+		if (trySpread(grid, x, y, spreadDir)) return;
+		// Try opposite direction
+		trySpread(grid, x, y, -spreadDir);
 	}
 };
+
+function trySpread(grid: Grid, x: number, y: number, dir: number): boolean {
+	const nx = x + dir;
+
+	// Check if we can move there
+	if (grid.isEmpty(nx, y)) {
+		// Only spread if there's support below or we're falling into a gap
+		const hasSupport = !grid.isEmpty(nx, y + 1);
+		if (hasSupport || Math.random() < 0.3) {
+			grid.swap(x, y, nx, y);
+			return true;
+		}
+	}
+
+	// Try to displace lighter liquid (oil) horizontally
+	const neighbor = grid.get(nx, y);
+	if (neighbor && !neighbor.updated && neighbor.type === 'oil') {
+		neighbor.updated = true;
+		grid.swap(x, y, nx, y);
+		return true;
+	}
+
+	return false;
+}

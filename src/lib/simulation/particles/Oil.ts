@@ -20,12 +20,8 @@ export const Oil: ParticleDefinition = {
 			return;
 		}
 
-		// Oil floats on water - if water is below, swap
-		const below = grid.get(x, y + 1);
-		if (below && below.type === 'water') {
-			// Water is denser, so water sinks and oil floats
-			// This is handled by water's update
-		}
+		// Oil is lighter than water - don't try to displace it, let water push us up
+		// Just check if we can fall
 
 		// Try to move diagonally down
 		const dirs = Math.random() < 0.5 ? [-1, 1] : [1, -1];
@@ -36,16 +32,30 @@ export const Oil: ParticleDefinition = {
 			}
 		}
 
-		// Spread horizontally (slower than water)
-		if (Math.random() < 0.5) {
-			const spreadDir = Math.random() < 0.5 ? -1 : 1;
-			if (grid.isEmpty(x + spreadDir, y)) {
-				grid.swap(x, y, x + spreadDir, y);
-				return;
-			}
-			if (grid.isEmpty(x - spreadDir, y)) {
-				grid.swap(x, y, x - spreadDir, y);
+		// Spread horizontally - try both directions
+		const spreadDir = Math.random() < 0.5 ? 1 : -1;
+
+		// Try primary direction
+		if (trySpread(grid, x, y, spreadDir)) return;
+		// Try opposite direction
+		trySpread(grid, x, y, -spreadDir);
+	}
+};
+
+function trySpread(grid: Grid, x: number, y: number, dir: number): boolean {
+	const nx = x + dir;
+
+	if (grid.isEmpty(nx, y)) {
+		// Only spread if there's support below
+		const hasSupport = !grid.isEmpty(nx, y + 1);
+		if (hasSupport || Math.random() < 0.3) {
+			const particle = grid.get(x, y);
+			if (particle) {
+				grid.swap(x, y, nx, y);
+				return true;
 			}
 		}
 	}
-};
+
+	return false;
+}
