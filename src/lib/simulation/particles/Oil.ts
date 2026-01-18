@@ -9,53 +9,52 @@ export const Oil: ParticleDefinition = {
 	category: 'liquid',
 	flammable: true,
 
-	update(grid: Grid, x: number, y: number): void {
-		const particle = grid.get(x, y);
+	update(grid: Grid, x: number, y: number, z: number): void {
+		const particle = grid.get(x, y, z);
 		if (!particle || particle.updated) return;
 		particle.updated = true;
 
 		// Try to move down
-		if (grid.isEmpty(x, y + 1)) {
-			grid.swap(x, y, x, y + 1);
+		if (grid.isEmpty(x, y - 1, z)) {
+			grid.swap(x, y, z, x, y - 1, z);
 			return;
 		}
 
-		// Oil is lighter than water - don't try to displace it, let water push us up
-		// Just check if we can fall
-
 		// Try to move diagonally down
-		const dirs = Math.random() < 0.5 ? [-1, 1] : [1, -1];
-		for (const dx of dirs) {
-			if (grid.isEmpty(x + dx, y + 1)) {
-				grid.swap(x, y, x + dx, y + 1);
+		const diagonals: [number, number][] = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+		shuffleArray(diagonals);
+
+		for (const [dx, dz] of diagonals) {
+			if (grid.isEmpty(x + dx, y - 1, z + dz)) {
+				grid.swap(x, y, z, x + dx, y - 1, z + dz);
 				return;
 			}
 		}
 
-		// Spread horizontally - try both directions
-		const spreadDir = Math.random() < 0.5 ? 1 : -1;
+		// Spread horizontally (slower than water)
+		if (Math.random() < 0.5) {
+			const spreadDirs: [number, number][] = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+			shuffleArray(spreadDirs);
 
-		// Try primary direction
-		if (trySpread(grid, x, y, spreadDir)) return;
-		// Try opposite direction
-		trySpread(grid, x, y, -spreadDir);
-	}
-};
+			for (const [dx, dz] of spreadDirs) {
+				const nx = x + dx;
+				const nz = z + dz;
 
-function trySpread(grid: Grid, x: number, y: number, dir: number): boolean {
-	const nx = x + dir;
-
-	if (grid.isEmpty(nx, y)) {
-		// Only spread if there's support below
-		const hasSupport = !grid.isEmpty(nx, y + 1);
-		if (hasSupport || Math.random() < 0.3) {
-			const particle = grid.get(x, y);
-			if (particle) {
-				grid.swap(x, y, nx, y);
-				return true;
+				if (grid.isEmpty(nx, y, nz)) {
+					const hasSupport = !grid.isEmpty(nx, y - 1, nz);
+					if (hasSupport || Math.random() < 0.3) {
+						grid.swap(x, y, z, nx, y, nz);
+						return;
+					}
+				}
 			}
 		}
 	}
+};
 
-	return false;
+function shuffleArray<T>(array: T[]): void {
+	for (let i = array.length - 1; i > 0; i--) {
+		const j = Math.floor(Math.random() * (i + 1));
+		[array[i], array[j]] = [array[j], array[i]];
+	}
 }

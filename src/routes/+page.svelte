@@ -7,7 +7,7 @@
 	import { onMount } from 'svelte';
 
 	let selectedElement: ParticleType = $state('sand');
-	let brushSize = $state(3);
+	let brushSize = $state(2);
 	let paused = $state(false);
 	let gameCanvas: GameCanvas;
 
@@ -27,10 +27,12 @@
 		gameCanvas?.clear();
 	}
 
+	function handleResetCamera(): void {
+		gameCanvas?.resetCamera();
+	}
+
 	onMount(() => {
-		// Keyboard shortcuts
 		function handleKeydown(e: KeyboardEvent): void {
-			// Don't trigger shortcuts when typing in inputs
 			if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
 				return;
 			}
@@ -42,6 +44,9 @@
 					break;
 				case 'KeyC':
 					handleClear();
+					break;
+				case 'KeyR':
+					handleResetCamera();
 					break;
 				case 'Digit1':
 					selectedElement = 'sand';
@@ -74,7 +79,7 @@
 					brushSize = Math.max(1, brushSize - 1);
 					break;
 				case 'BracketRight':
-					brushSize = Math.min(20, brushSize + 1);
+					brushSize = Math.min(10, brushSize + 1);
 					break;
 			}
 		}
@@ -85,13 +90,13 @@
 </script>
 
 <svelte:head>
-	<title>Sand Simulator</title>
-	<meta name="description" content="A falling sand particle simulator" />
+	<title>3D Sand Simulator</title>
+	<meta name="description" content="A 3D falling sand particle simulator" />
 </svelte:head>
 
 <div class="app">
 	<aside class="sidebar">
-		<h1 class="title">Sand Simulator</h1>
+		<h1 class="title">3D Sand Simulator</h1>
 		<ElementPalette selected={selectedElement} onSelect={handleElementSelect} />
 		<div class="shortcuts">
 			<h3>Shortcuts</h3>
@@ -100,7 +105,14 @@
 				<li><kbd>0</kbd> Eraser</li>
 				<li><kbd>Space</kbd> Pause/Play</li>
 				<li><kbd>C</kbd> Clear</li>
+				<li><kbd>R</kbd> Reset camera</li>
 				<li><kbd>[ ]</kbd> Brush size</li>
+			</ul>
+			<h3>Camera</h3>
+			<ul>
+				<li><kbd>Drag</kbd> Rotate</li>
+				<li><kbd>Scroll</kbd> Zoom</li>
+				<li><kbd>Right-drag</kbd> Pan</li>
 			</ul>
 		</div>
 	</aside>
@@ -116,9 +128,9 @@
 		<div class="canvas-container">
 			<GameCanvas
 				bind:this={gameCanvas}
-				width={400}
-				height={300}
-				scale={2}
+				width={64}
+				height={64}
+				depth={64}
 				{selectedElement}
 				{brushSize}
 				{paused}
@@ -143,10 +155,11 @@
 		background: var(--bg-primary);
 		border-right: 1px solid var(--bg-tertiary);
 		overflow-y: auto;
+		min-width: 160px;
 	}
 
 	.title {
-		font-size: 18px;
+		font-size: 16px;
 		font-weight: 600;
 		color: var(--text-primary);
 		margin: 0;
@@ -157,15 +170,19 @@
 		padding: 12px;
 		background: var(--bg-secondary);
 		border-radius: 8px;
-		font-size: 12px;
+		font-size: 11px;
 	}
 
 	.shortcuts h3 {
 		margin: 0 0 8px 0;
-		font-size: 11px;
+		font-size: 10px;
 		text-transform: uppercase;
 		color: var(--text-secondary);
 		letter-spacing: 0.5px;
+	}
+
+	.shortcuts h3:not(:first-child) {
+		margin-top: 12px;
 	}
 
 	.shortcuts ul {
@@ -174,21 +191,22 @@
 		padding: 0;
 		display: flex;
 		flex-direction: column;
-		gap: 4px;
+		gap: 3px;
 	}
 
 	.shortcuts li {
 		display: flex;
-		gap: 8px;
+		gap: 6px;
 		color: var(--text-secondary);
+		font-size: 10px;
 	}
 
 	.shortcuts kbd {
 		background: var(--bg-tertiary);
-		padding: 2px 6px;
-		border-radius: 3px;
+		padding: 1px 4px;
+		border-radius: 2px;
 		font-family: inherit;
-		font-size: 11px;
+		font-size: 9px;
 		color: var(--text-primary);
 	}
 
@@ -196,23 +214,18 @@
 		flex: 1;
 		display: flex;
 		flex-direction: column;
-		gap: 16px;
-		padding: 16px;
+		gap: 12px;
+		padding: 12px;
 		overflow: hidden;
 	}
 
 	.canvas-container {
 		flex: 1;
 		display: flex;
-		align-items: center;
-		justify-content: center;
+		align-items: stretch;
+		justify-content: stretch;
 		background: var(--bg-secondary);
 		border-radius: 8px;
 		overflow: hidden;
-	}
-
-	:global(.game-canvas) {
-		max-width: 100%;
-		max-height: 100%;
 	}
 </style>

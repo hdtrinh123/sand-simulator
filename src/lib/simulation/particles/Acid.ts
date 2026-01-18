@@ -9,31 +9,30 @@ export const Acid: ParticleDefinition = {
 	density: 2,
 	category: 'special',
 
-	update(grid: Grid, x: number, y: number): void {
-		const particle = grid.get(x, y);
+	update(grid: Grid, x: number, y: number, z: number): void {
+		const particle = grid.get(x, y, z);
 		if (!particle || particle.updated) return;
 		particle.updated = true;
 
-		// Check for things to dissolve
-		const neighbors = [
-			[0, 1],   // down first (priority)
-			[-1, 0], [1, 0],
-			[-1, 1], [1, 1]
+		// Check for things to dissolve (prioritize below, then sides)
+		const neighbors: [number, number, number][] = [
+			[0, -1, 0],  // down first
+			[-1, 0, 0], [1, 0, 0], [0, 0, -1], [0, 0, 1],  // sides
+			[-1, -1, 0], [1, -1, 0], [0, -1, -1], [0, -1, 1]  // diagonal down
 		];
 
-		for (const [dx, dy] of neighbors) {
-			const neighbor = grid.get(x + dx, y + dy);
+		for (const [dx, dy, dz] of neighbors) {
+			const neighbor = grid.get(x + dx, y + dy, z + dz);
 			if (neighbor && neighbor.type !== 'acid' && neighbor.type !== 'empty') {
 				// Don't dissolve stone
 				if (neighbor.type === 'stone') continue;
 
 				// Dissolve the material
 				if (Math.random() < 0.1) {
-					grid.set(x + dx, y + dy, null);
+					grid.set(x + dx, y + dy, z + dz, null);
 					// Sometimes the acid is consumed too
 					if (Math.random() < 0.3) {
-						// Create smoke as byproduct
-						grid.set(x, y, createParticle('smoke', 0x88ff88, 30));
+						grid.set(x, y, z, createParticle('smoke', 0x88ff88, 30));
 						return;
 					}
 				}
@@ -41,37 +40,44 @@ export const Acid: ParticleDefinition = {
 		}
 
 		// Try to move down
-		if (grid.isEmpty(x, y + 1)) {
-			grid.swap(x, y, x, y + 1);
+		if (grid.isEmpty(x, y - 1, z)) {
+			grid.swap(x, y, z, x, y - 1, z);
 			return;
 		}
 
 		// Try to move diagonally down
-		const dirs = Math.random() < 0.5 ? [-1, 1] : [1, -1];
-		for (const dx of dirs) {
-			if (grid.isEmpty(x + dx, y + 1)) {
-				grid.swap(x, y, x + dx, y + 1);
+		const diagonals: [number, number][] = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+		shuffleArray(diagonals);
+
+		for (const [dx, dz] of diagonals) {
+			if (grid.isEmpty(x + dx, y - 1, z + dz)) {
+				grid.swap(x, y, z, x + dx, y - 1, z + dz);
 				return;
 			}
 		}
 
 		// Spread horizontally
-		const spreadDir = Math.random() < 0.5 ? 1 : -1;
-		if (trySpread(grid, x, y, spreadDir)) return;
-		trySpread(grid, x, y, -spreadDir);
+		const spreadDirs: [number, number][] = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+		shuffleArray(spreadDirs);
+
+		for (const [dx, dz] of spreadDirs) {
+			const nx = x + dx;
+			const nz = z + dz;
+
+			if (grid.isEmpty(nx, y, nz)) {
+				const hasSupport = !grid.isEmpty(nx, y - 1, nz);
+				if (hasSupport || Math.random() < 0.3) {
+					grid.swap(x, y, z, nx, y, nz);
+					return;
+				}
+			}
+		}
 	}
 };
 
-function trySpread(grid: Grid, x: number, y: number, dir: number): boolean {
-	const nx = x + dir;
-
-	if (grid.isEmpty(nx, y)) {
-		const hasSupport = !grid.isEmpty(nx, y + 1);
-		if (hasSupport || Math.random() < 0.3) {
-			grid.swap(x, y, nx, y);
-			return true;
-		}
+function shuffleArray<T>(array: T[]): void {
+	for (let i = array.length - 1; i > 0; i--) {
+		const j = Math.floor(Math.random() * (i + 1));
+		[array[i], array[j]] = [array[j], array[i]];
 	}
-
-	return false;
 }

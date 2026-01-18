@@ -8,8 +8,8 @@ export const Smoke: ParticleDefinition = {
 	density: 0,
 	category: 'gas',
 
-	update(grid: Grid, x: number, y: number): void {
-		const particle = grid.get(x, y);
+	update(grid: Grid, x: number, y: number, z: number): void {
+		const particle = grid.get(x, y, z);
 		if (!particle || particle.updated) return;
 		particle.updated = true;
 
@@ -21,7 +21,7 @@ export const Smoke: ParticleDefinition = {
 		// Decrease life and fade
 		particle.life--;
 		if (particle.life <= 0) {
-			grid.set(x, y, null);
+			grid.set(x, y, z, null);
 			return;
 		}
 
@@ -34,26 +34,36 @@ export const Smoke: ParticleDefinition = {
 
 		// Rise upward with some randomness
 		if (Math.random() < 0.8) {
-			if (grid.isEmpty(x, y - 1)) {
-				grid.swap(x, y, x, y - 1);
+			if (grid.isEmpty(x, y + 1, z)) {
+				grid.swap(x, y, z, x, y + 1, z);
 				return;
 			}
 
 			// Drift to sides while rising
-			const drift = Math.random() < 0.5 ? -1 : 1;
-			if (grid.isEmpty(x + drift, y - 1)) {
-				grid.swap(x, y, x + drift, y - 1);
-				return;
-			}
-			if (grid.isEmpty(x - drift, y - 1)) {
-				grid.swap(x, y, x - drift, y - 1);
-				return;
+			const drifts: [number, number][] = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+			shuffleArray(drifts);
+
+			for (const [dx, dz] of drifts) {
+				if (grid.isEmpty(x + dx, y + 1, z + dz)) {
+					grid.swap(x, y, z, x + dx, y + 1, z + dz);
+					return;
+				}
 			}
 
 			// Try to move sideways
-			if (grid.isEmpty(x + drift, y)) {
-				grid.swap(x, y, x + drift, y);
+			for (const [dx, dz] of drifts) {
+				if (grid.isEmpty(x + dx, y, z + dz)) {
+					grid.swap(x, y, z, x + dx, y, z + dz);
+					return;
+				}
 			}
 		}
 	}
 };
+
+function shuffleArray<T>(array: T[]): void {
+	for (let i = array.length - 1; i > 0; i--) {
+		const j = Math.floor(Math.random() * (i + 1));
+		[array[i], array[j]] = [array[j], array[i]];
+	}
+}

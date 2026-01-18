@@ -8,7 +8,7 @@ export const Stone: ParticleDefinition = {
 	density: 10,
 	category: 'solid',
 
-	update(_grid: Grid, _x: number, _y: number): void {
+	update(_grid: Grid, _x: number, _y: number, _z: number): void {
 		// Stone doesn't move
 	}
 };

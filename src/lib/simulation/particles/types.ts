@@ -24,17 +24,18 @@ export interface ParticleDefinition {
 	density: number;
 	category: 'solid' | 'powder' | 'liquid' | 'gas' | 'special';
 	flammable?: boolean;
-	update: (grid: Grid, x: number, y: number) => void;
+	update: (grid: Grid, x: number, y: number, z: number) => void;
 }
 
 export interface Grid {
 	width: number;
 	height: number;
-	get(x: number, y: number): ParticleData | null;
-	set(x: number, y: number, particle: ParticleData): void;
-	swap(x1: number, y1: number, x2: number, y2: number): void;
-	isEmpty(x: number, y: number): boolean;
-	isInBounds(x: number, y: number): boolean;
+	depth: number;
+	get(x: number, y: number, z: number): ParticleData | null;
+	set(x: number, y: number, z: number, particle: ParticleData | null): void;
+	swap(x1: number, y1: number, z1: number, x2: number, y2: number, z2: number): void;
+	isEmpty(x: number, y: number, z: number): boolean;
+	isInBounds(x: number, y: number, z: number): boolean;
 	clear(): void;
 }
 

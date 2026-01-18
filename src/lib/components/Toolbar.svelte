@@ -28,7 +28,7 @@
 			<input
 				type="range"
 				min="1"
-				max="20"
+				max="10"
 				value={brushSize}
 				oninput={handleBrushChange}
 				class="brush-slider"
