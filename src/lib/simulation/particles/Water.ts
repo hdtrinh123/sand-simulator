@@ -11,7 +11,7 @@ export const Water: ParticleDefinition = {
 	update(grid: Grid, x: number, y: number, z: number): void {
 		const particle = grid.get(x, y, z);
 		if (!particle || particle.updated) return;
-		particle.updated = true;
+		// swap() will set updated = true when particle moves
 
 		// Try to move down
 		if (grid.isEmpty(x, y - 1, z)) {

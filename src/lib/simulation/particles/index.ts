@@ -1,5 +1,7 @@
 import type { ParticleDefinition, ParticleType } from './types';
 import { Sand } from './Sand';
+import { Dirt } from './Dirt';
+import { Grass } from './Grass';
 import { Water } from './Water';
 import { Stone } from './Stone';
 import { Fire } from './Fire';
@@ -13,6 +15,8 @@ export * from './types';
 export const particles: Record<ParticleType, ParticleDefinition | null> = {
 	empty: null,
 	sand: Sand,
+	dirt: Dirt,
+	grass: Grass,
 	water: Water,
 	stone: Stone,
 	fire: Fire,
@@ -24,6 +28,8 @@ export const particles: Record<ParticleType, ParticleDefinition | null> = {
 
 export const particleList: ParticleDefinition[] = [
 	Sand,
+	Dirt,
+	Grass,
 	Water,
 	Stone,
 	Fire,

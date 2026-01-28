@@ -12,7 +12,8 @@ export const Fire: ParticleDefinition = {
 	update(grid: Grid, x: number, y: number, z: number): void {
 		const particle = grid.get(x, y, z);
 		if (!particle || particle.updated) return;
-		particle.updated = true;
+		// Fire always does work (life countdown), mark as processed
+		particle.updated = true; // Fire is special - always active while alive
 
 		// Decrease life
 		if (particle.life !== undefined) {

@@ -8,6 +8,7 @@ export const Wood: ParticleDefinition = {
 	density: 5,
 	category: 'solid',
 	flammable: true,
+	isStatic: true, // Doesn't move; fire spreading handled by Fire.update()
 
 	update(_grid: Grid, _x: number, _y: number, _z: number): void {
 		// Wood doesn't move, but can be ignited by Fire

@@ -1,18 +1,24 @@
 <script lang="ts">
+	import type { CameraMode } from '../rendering/ThreeRenderer';
+
 	interface Props {
 		brushSize?: number;
 		paused?: boolean;
+		cameraMode?: CameraMode;
 		onBrushSizeChange?: (size: number) => void;
 		onPauseToggle?: () => void;
 		onClear?: () => void;
+		onModeToggle?: () => void;
 	}
 
 	let {
 		brushSize = 3,
 		paused = false,
+		cameraMode = 'orbit',
 		onBrushSizeChange,
 		onPauseToggle,
-		onClear
+		onClear,
+		onModeToggle
 	}: Props = $props();
 
 	function handleBrushChange(e: Event): void {
@@ -37,6 +43,15 @@
 	</div>
 
 	<div class="toolbar-section buttons">
+		<button
+			class="toolbar-btn mode-btn"
+			class:firstperson={cameraMode === 'firstperson'}
+			onclick={onModeToggle}
+			title={cameraMode === 'orbit' ? 'Switch to First Person (F)' : 'Switch to Orbit (F/ESC)'}
+		>
+			{cameraMode === 'orbit' ? '👁 Orbit' : '🎮 First Person'}
+		</button>
+
 		<button
 			class="toolbar-btn"
 			class:active={paused}
@@ -136,6 +151,10 @@
 
 	.toolbar-btn.active {
 		background: var(--accent);
+	}
+
+	.toolbar-btn.mode-btn.firstperson {
+		background: #2980b9;
 	}
 
 	.toolbar-btn.danger:hover {

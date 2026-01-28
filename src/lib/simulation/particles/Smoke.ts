@@ -11,7 +11,8 @@ export const Smoke: ParticleDefinition = {
 	update(grid: Grid, x: number, y: number, z: number): void {
 		const particle = grid.get(x, y, z);
 		if (!particle || particle.updated) return;
-		particle.updated = true;
+		// Smoke always does work (life countdown), mark as processed
+		particle.updated = true; // Smoke is special - always active while alive
 
 		// Initialize life if not set
 		if (particle.life === undefined) {

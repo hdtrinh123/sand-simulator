@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { Engine } from '../simulation/Engine';
-	import { ThreeRenderer } from '../rendering/ThreeRenderer';
+	import { Engine, type PerformanceStats } from '../simulation/Engine';
+	import { ThreeRenderer, type CameraMode } from '../rendering/ThreeRenderer';
 	import { InputHandler3D } from '../input/InputHandler3D';
 	import type { ParticleType } from '../simulation/particles';
 
@@ -12,15 +12,19 @@
 		selectedElement?: ParticleType;
 		brushSize?: number;
 		paused?: boolean;
+		cameraMode?: CameraMode;
+		onModeChange?: (mode: CameraMode) => void;
 	}
 
 	let {
-		width = 64,
-		height = 64,
-		depth = 64,
+		width = 96,
+		height = 96,
+		depth = 96,
 		selectedElement = 'sand',
 		brushSize = 2,
-		paused = false
+		paused = false,
+		cameraMode = 'orbit',
+		onModeChange
 	}: Props = $props();
 
 	let canvas: HTMLCanvasElement;
@@ -41,10 +45,34 @@
 		renderer?.resetCamera();
 	}
 
+	export function generateWorld(): void {
+		engine?.generateWorld();
+	}
+
+	export function toggleCameraMode(): CameraMode {
+		return renderer?.toggleCameraMode() ?? 'orbit';
+	}
+
+	export function setCameraMode(mode: CameraMode): void {
+		renderer?.setCameraMode(mode);
+	}
+
+	export function getStats(): PerformanceStats | null {
+		if (!engine || !renderer) return null;
+		const stats = engine.getStats();
+		stats.renderMs = renderer.getRenderMs();
+		return stats;
+	}
+
 	onMount(() => {
 		engine = new Engine(width, height, depth);
 		renderer = new ThreeRenderer(canvas, engine.grid);
 		inputHandler = new InputHandler3D(canvas, engine, renderer);
+
+		// Listen for mode changes from the renderer
+		renderer.onModeChange = (mode) => {
+			onModeChange?.(mode);
+		};
 
 		// Handle resize
 		const resizeObserver = new ResizeObserver(() => {
@@ -95,6 +123,12 @@
 			} else {
 				engine.start();
 			}
+		}
+	});
+
+	$effect(() => {
+		if (renderer && renderer.getCameraMode() !== cameraMode) {
+			renderer.setCameraMode(cameraMode);
 		}
 	});
 </script>

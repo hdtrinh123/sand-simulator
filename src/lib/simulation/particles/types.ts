@@ -1,6 +1,8 @@
 export type ParticleType =
 	| 'empty'
 	| 'sand'
+	| 'dirt'
+	| 'grass'
 	| 'water'
 	| 'stone'
 	| 'fire'
@@ -14,6 +16,8 @@ export interface ParticleData {
 	color: number;
 	life?: number;
 	updated?: boolean;
+	asleep?: boolean; // Particle hasn't moved recently, skip simulation
+	sleepCounter?: number; // Frames since last movement
 }
 
 export interface ParticleDefinition {
@@ -24,6 +28,7 @@ export interface ParticleDefinition {
 	density: number;
 	category: 'solid' | 'powder' | 'liquid' | 'gas' | 'special';
 	flammable?: boolean;
+	isStatic?: boolean; // Static particles never need simulation (e.g., stone)
 	update: (grid: Grid, x: number, y: number, z: number) => void;
 }
 

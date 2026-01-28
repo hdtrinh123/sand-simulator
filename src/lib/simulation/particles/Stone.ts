@@ -7,6 +7,7 @@ export const Stone: ParticleDefinition = {
 	colorVariation: 25,
 	density: 10,
 	category: 'solid',
+	isStatic: true, // Never needs simulation
 
 	update(_grid: Grid, _x: number, _y: number, _z: number): void {
 		// Stone doesn't move

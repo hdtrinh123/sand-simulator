@@ -12,7 +12,8 @@ export const Acid: ParticleDefinition = {
 	update(grid: Grid, x: number, y: number, z: number): void {
 		const particle = grid.get(x, y, z);
 		if (!particle || particle.updated) return;
-		particle.updated = true;
+		// Acid actively checks for things to dissolve
+		particle.updated = true; // Acid is special - always checking for targets
 
 		// Check for things to dissolve (prioritize below, then sides)
 		const neighbors: [number, number, number][] = [

@@ -11,7 +11,7 @@ export const Sand: ParticleDefinition = {
 	update(grid: Grid, x: number, y: number, z: number): void {
 		const particle = grid.get(x, y, z);
 		if (!particle || particle.updated) return;
-		particle.updated = true;
+		// Don't set updated here - swap() will set it if particle actually moves
 
 		// Try to move down (Y-1 in Three.js coordinates)
 		if (grid.isEmpty(x, y - 1, z)) {

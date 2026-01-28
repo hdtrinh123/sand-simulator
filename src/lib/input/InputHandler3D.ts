@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { ParticleType } from '../simulation/particles';
 import type { Engine } from '../simulation/Engine';
-import type { ThreeRenderer } from '../rendering/ThreeRenderer';
+import type { ThreeRenderer, CameraMode } from '../rendering/ThreeRenderer';
 
 export class InputHandler3D {
 	private engine: Engine;
@@ -13,9 +13,11 @@ export class InputHandler3D {
 	private isDrawing: boolean = false;
 	private lastPosition: THREE.Vector3 | null = null;
 
-	// Plane for raycasting when clicking empty space
+	// Plane for raycasting when clicking empty space (orbit mode)
 	private drawPlane: THREE.Plane;
-	private planeHelper: THREE.PlaneHelper | null = null;
+
+	// First-person settings
+	private readonly maxPlaceDistance = 15; // Max distance to place in first-person
 
 	selectedElement: ParticleType = 'sand';
 	brushSize: number = 2;
@@ -55,7 +57,7 @@ export class InputHandler3D {
 		this.mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
 	}
 
-	private getDrawPosition(): THREE.Vector3 | null {
+	private getDrawPositionOrbit(): THREE.Vector3 | null {
 		this.raycaster.setFromCamera(this.mouse, this.renderer.getCamera());
 
 		// First, try to hit existing particles (for erasing or building on top)
@@ -97,16 +99,77 @@ export class InputHandler3D {
 		return null;
 	}
 
+	private getDrawPositionFirstPerson(): THREE.Vector3 | null {
+		const camera = this.renderer.getCamera();
+
+		// In first-person, raycast from camera center (crosshair)
+		// Use (0, 0) for center of screen
+		this.raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+
+		const scene = this.renderer.getScene();
+		const intersects = this.raycaster.intersectObjects(scene.children, true);
+
+		for (const intersect of intersects) {
+			if (intersect.object.type === 'InstancedMesh' && intersect.distance < this.maxPlaceDistance) {
+				// Hit an existing voxel - place adjacent to it
+				const point = intersect.point;
+				const normal = intersect.face?.normal;
+
+				if (normal) {
+					const worldNormal = normal.clone().transformDirection(intersect.object.matrixWorld);
+
+					const gridPos = new THREE.Vector3(
+						Math.floor(point.x + worldNormal.x * 0.5),
+						Math.floor(point.y + worldNormal.y * 0.5),
+						Math.floor(point.z + worldNormal.z * 0.5)
+					);
+
+					return gridPos;
+				}
+			}
+		}
+
+		// If no voxel hit, place at a fixed distance in front of camera
+		const direction = new THREE.Vector3();
+		camera.getWorldDirection(direction);
+
+		const placeDistance = 8; // Place 8 units in front
+		const placePos = camera.position.clone().add(direction.multiplyScalar(placeDistance));
+
+		// Clamp to grid bounds
+		const grid = this.engine.grid;
+		placePos.x = Math.max(0, Math.min(grid.width - 1, Math.floor(placePos.x)));
+		placePos.y = Math.max(0, Math.min(grid.height - 1, Math.floor(placePos.y)));
+		placePos.z = Math.max(0, Math.min(grid.depth - 1, Math.floor(placePos.z)));
+
+		return placePos;
+	}
+
+	private getDrawPosition(): THREE.Vector3 | null {
+		if (this.renderer.getCameraMode() === 'firstperson') {
+			return this.getDrawPositionFirstPerson();
+		}
+		return this.getDrawPositionOrbit();
+	}
+
 	private handleMouseDown = (e: MouseEvent): void => {
 		// Only draw with left mouse button
 		if (e.button !== 0) return;
 
-		// Check if we're over the controls (orbiting)
-		// If shift is held, we're orbiting, not drawing
-		if (e.shiftKey) return;
+		const mode = this.renderer.getCameraMode();
+
+		// In orbit mode, shift+click is for orbiting
+		if (mode === 'orbit' && e.shiftKey) return;
+
+		// In first-person, only draw when pointer is locked
+		if (mode === 'firstperson' && !this.renderer.isPointerLocked()) return;
 
 		this.isDrawing = true;
-		this.updateMousePosition(e.clientX, e.clientY);
+
+		if (mode === 'orbit') {
+			this.updateMousePosition(e.clientX, e.clientY);
+		}
+
 		const pos = this.getDrawPosition();
 		if (pos) {
 			this.draw(pos);
@@ -117,7 +180,12 @@ export class InputHandler3D {
 	private handleMouseMove = (e: MouseEvent): void => {
 		if (!this.isDrawing) return;
 
-		this.updateMousePosition(e.clientX, e.clientY);
+		const mode = this.renderer.getCameraMode();
+
+		if (mode === 'orbit') {
+			this.updateMousePosition(e.clientX, e.clientY);
+		}
+
 		const pos = this.getDrawPosition();
 
 		if (pos) {
@@ -136,6 +204,9 @@ export class InputHandler3D {
 	};
 
 	private handleTouchStart = (e: TouchEvent): void => {
+		// Touch only works in orbit mode
+		if (this.renderer.getCameraMode() !== 'orbit') return;
+
 		e.preventDefault();
 		if (e.touches.length === 1) {
 			this.isDrawing = true;
@@ -150,6 +221,8 @@ export class InputHandler3D {
 	};
 
 	private handleTouchMove = (e: TouchEvent): void => {
+		if (this.renderer.getCameraMode() !== 'orbit') return;
+
 		e.preventDefault();
 		if (!this.isDrawing || e.touches.length !== 1) return;
 
@@ -187,10 +260,6 @@ export class InputHandler3D {
 		const dx = Math.abs(to.x - from.x);
 		const dy = Math.abs(to.y - from.y);
 		const dz = Math.abs(to.z - from.z);
-
-		const sx = from.x < to.x ? 1 : -1;
-		const sy = from.y < to.y ? 1 : -1;
-		const sz = from.z < to.z ? 1 : -1;
 
 		const maxDist = Math.max(dx, dy, dz);
 		if (maxDist === 0) {
